@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong-Spiel</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000; /* Schwarzer Hintergrund */
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+        canvas {
+            border: 2px solid #fff;
+        }
+        #score {
+            position: absolute;
+            top: 20px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="pongCanvas" width="600" height="400"></canvas>
+    <div id="score">DU: 0 | COLLIN: 0</div>
+
+    <script>
+        const canvas = document.getElementById('pongCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const paddleWidth = 10, paddleHeight = 100;
+        const ballSize = 10;
+        let playerScore = 0, computerScore = 0;
+
+        const player = {
+            x: 10,
+            y: canvas.height / 2 - paddleHeight / 2,
+            width: paddleWidth,
+            height: paddleHeight,
+            dy: 0
+        };
+
+        const computer = {
+            x: canvas.width - paddleWidth - 10,
+            y: canvas.height / 2 - paddleHeight / 2,
+            width: paddleWidth,
+            height: paddleHeight,
+            dy: 4
+        };
+
+        const ball = {
+            x: canvas.width / 2 - ballSize / 2,
+            y: canvas.height / 2 - ballSize / 2,
+            size: ballSize,
+            dx: 4,
+            dy: 4,
+            color: '#00f', // Blaue Farbe
+            glow: 'rgba(0, 0, 255, 0.5)' // Leuchten
+        };
+
+        function drawPaddle(x, y, width, height) {
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.8)'; // Neon weißer Glüheffekt
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(x, y, width, height);
+            ctx.shadowBlur = 0; // Schatten zurücksetzen
+        }
+
+        function drawBall(x, y, size, color, glow) {
+            ctx.shadowColor = glow;
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, size, size);
+            ctx.shadowBlur = 0; // Schatten zurücksetzen
+        }
+
+        function drawScore() {
+            document.getElementById('score').textContent = `DU: ${playerScore} | COLLIN: ${computerScore}`;
+        }
+
+        function movePlayer() {
+            player.y += player.dy;
+
+            if (player.y < 0) player.y = 0;
+            if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
+        }
+
+        function moveComputer() {
+            if (ball.y < computer.y + computer.height / 2) {
+                computer.y -= computer.dy;
+            } else {
+                computer.y += computer.dy;
+            }
+
+            if (computer.y < 0) computer.y = 0;
+            if (computer.y + computer.height > canvas.height) computer.y = canvas.height - computer.height;
+        }
+
+        function moveBall() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            if (ball.y < 0 || ball.y + ball.size > canvas.height) {
+                ball.dy *= -1;
+            }
+
+            if (ballCollidesWithPaddle(player)) {
+                ball.dx *= -1;
+                ball.x = player.x + player.width;
+            } else if (ballCollidesWithPaddle(computer)) {
+                ball.dx *= -1;
+                ball.x = computer.x - ball.size;
+            }
+
+            if (ball.x < 0) {
+                computerScore++;
+                resetBall();
+            } else if (ball.x + ball.size > canvas.width) {
+                playerScore++;
+                resetBall();
+            }
+        }
+
+        function ballCollidesWithPaddle(paddle) {
+            return ball.x < paddle.x + paddle.width &&
+                ball.x + ball.size > paddle.x &&
+                ball.y < paddle.y + paddle.height &&
+                ball.y + ball.size > paddle.y;
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2 - ballSize / 2;
+            ball.y = canvas.height / 2 - ballSize / 2;
+            ball.dx *= -1;
+        }
+
+        function update() {
+            movePlayer();
+            moveComputer();
+            moveBall();
+            drawScore();
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawPaddle(player.x, player.y, player.width, player.height);
+            drawPaddle(computer.x, computer.y, computer.width, computer.height);
+            drawBall(ball.x, ball.y, ball.size, ball.color, ball.glow);
+
+            requestAnimationFrame(update);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') player.dy = -6;
+            if (e.key === 'ArrowDown') player.dy = 6;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') player.dy = 0;
+        });
+
+        update();
+    </script>
+
+</body>
+</html>
